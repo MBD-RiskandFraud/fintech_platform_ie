@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+#-*- coding: utf-8 -*-
 """
 Created on Wed Jan 22 17:08:57 2020
 
@@ -105,7 +105,7 @@ class Loan(UserMixin, db.Model):
 # SQLAlchemy ORM class for Companies
 from datetime import datetime
 class Company(UserMixin, db.Model):
-    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    id = db.Column(db.Integer, primary_key=True)
     nif = db.Column(db.String(9))
     name = db.Column(db.String(50))
     p10000 = db.Column(db.Float)
@@ -117,15 +117,6 @@ class Company(UserMixin, db.Model):
     debt_ebitda = db.Column(db.Float)
     rraa_rrpp = db.Column(db.Float) # Leveraging - External Resources / Own Resources - Recursos Ajenos / recursos propios
     log_operating_income = db.Column(db.Float)
-    #--------------------------------------- 
-    debt_equity = db.Column(db.Float)      
-    assets_turnover = db.Column(db.Float)
-    ROA = db.Column(db.Float)
-    op_margin = db.Column(db.Float)
-    current_ratio = db.Column(db.Float)
-    debt_assets = db.Column(db.Float)
-    cap_assets = db.Column(db.Float)
-    #---------------------------------------   
     prob_default = db.Column(db.Float)
     username = db.Column(db.String(15))    
     data_timestamp = db.Column(db.DateTime, default=datetime.utcnow)
@@ -323,45 +314,6 @@ def company():
     if request.method == 'POST':
         if form.validate_on_submit():
             try:
-                p10000 = form.p10000.data
-            except:
-                p10000 = 0.0
-
-            
-            try:
-                p20000 = form.p20000.data
-            except:
-                p31200 = 0.0
-
-            
-            
-            try:
-                p31200 = form.p31200.data
-            except:
-                p31200 = 0.0
-
-            
-            try:
-                p32300 = form.p32300.data
-            except:
-                p32300 = 0.0
-
-            try:
-                p40100_plus_40500 = form.p40100_plus_40500.data
-            except:
-                p40100_plus_40500 = 0.0  
-                
-            try:
-                p40800 = form.p40800.data
-            except:
-                p40800 = 0.0   
-                
-            try:
-                p49100 = form.p49100.data
-            except:
-                p49100 = 0.0 
-                
-            try:
                 ebitda_income = (form.p49100_plus_40800.data)/(form.p40100_plus_40500.data)
             except:
                 ebitda_income = 0.0
@@ -381,61 +333,10 @@ def company():
             except:
                 log_operating_income = 0.0
                 
-            # Additinal maths    
-            try:
-                debt_equity = (form.p31200_plus_p32300.data) /p20000.data
-            except:
-                debt_equity = 0.0
-                
-            try:
-                assets_turnover = (form.p40100_plus_40500.data) /form.p10000.data
-            except:
-                assets_turnover = 0.0
-
-            try:    
-                ROA = (form.p40100_plus_40500.data) / form.p10000.data
-            except:
-                ROA = 0
-            try:    
-                op_margin = form.p49100.data / form.p40100_plus_40500.data
-            except:
-                op_margin = 0
-                
-            try:                
-                current_ratio = form.p10000.data / (form.p10000.data - form.p20000.data)
-            except:
-                rraa_rrpp = 0
-            
-            try:
-                debt_assets = (form.p10000.data - form.p20000.data) /form.p10000.data
-            except:
-                debt_assets = 99.99               
-            
-            try:
-                cap_assets = form.p20000.data / form.p10000.data
-            except:
-                cap_assets = 0            
-                
-            X = pd.DataFrame({'p10000': [p10000], \
-                              'p20000' : [p20000], \
-                              'p31200': [p31200], \
-                              'p32300' : [p32300],\
-                              'p40100_plus_40500' : [p40100_plus_40500], \
-                              'p40800' : [p40800], \
-                              'p49100' : [p49100], \
-                              'ebitda_income': [ebitda_income], \
+            X = pd.DataFrame({'ebitda_income': [ebitda_income], \
                               'debt_ebitda': [debt_ebitda], \
                               'rraa_rrpp' : [rraa_rrpp], \
-                              'log_operating_income' : [log_operating_income],\
-                              #-----------------------------------------------
-                              'debt_equity' : [debt_equity], \
-                              'assets_turnover' : [assets_turnover], \
-                              'ROA' : [ROA], \
-                              'op_margin' : [op_margin], \
-                              'current_ratio' : [current_ratio], \
-                              'debt_assets' : [debt_assets],\
-                              'cap_assets' : [cap_assets]
-                              #-----------------------------------------------    
+                              'log_operating_income' : [log_operating_income]
                               })
             prob_default = Rating_RandomForestClassifier_model.predict_proba(X)[:,1]
         
@@ -458,15 +359,6 @@ def company():
                 company.rraa_rrpp = rraa_rrpp
                 company.prob_default = prob_default
                 company.log_operating_income = log_operating_income 
-                #-----------------------------------------------------
-                company.debt_equity = debt_equity
-                company.assets_turnover = assets_turnover 
-                company.ROA = ROA
-                company.op_margin = op_margin
-                company.current_ratio = current_ratio
-                company.debt_assets = debt_assets
-                company.cap_assets = cap_assets
-                #-----------------------------------------------------
                 company.username = current_user.username
                 db.session.commit()
                 message = 'Company data updated!'
@@ -484,15 +376,6 @@ def company():
                         rraa_rrpp = rraa_rrpp, \
                         prob_default = prob_default, \
                         log_operating_income = log_operating_income, \
-                            #---------------------------------
-                        debt_equity = debt_equity, \
-                        assets_turnover = assets_turnover, \
-                        ROA = ROA, \
-                        op_margin = op_margin, \
-                        current_ratio = current_ratio, \
-                        debt_assets = debt_assets,\
-                        cap_assets = cap_assets,\
-                            #------------------------------------
                         username = current_user.username
                         )
                 db.session.add(new_company)
@@ -518,7 +401,7 @@ def company():
 
         if limite_acepted - used_amount < order.loan_amount:
             automated_decision = 'rejected'
-        elif prob_default > 0.5:
+        elif prob_default > 0.00000000000000001:
             automated_decision = 'rejected'
         
         try:
@@ -539,7 +422,7 @@ def company():
                                message=message, \
                                name=current_user.username)
     else: # request acepted
-        monthly_payment = calc_monthly_payment(loan.loan_amount, 7.5*prob_default, \
+        monthly_payment = calc_monthly_payment(loan.loan_amount, 7.5, \
                                                loan.number_of_installments)
         message = 'Congratulations, your loan has been accepted and with a monthly payment of: %.2f'% \
         (monthly_payment) + " €"
@@ -567,7 +450,5 @@ def logout():
 
 
 if __name__ == '__main__':
-    from waitress import serve
-    serve(app, host="0.0.0.0", port=5000)
-    #app.run(debug=True, port=5000)
+    app.run(debug=True)
 

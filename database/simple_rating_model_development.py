@@ -109,32 +109,38 @@ y = df_clean.loc[df_clean.activity=='Manufacturing','target_status']
 fitted_model_manu = model.fit(X, y)
 
 #Others
+model = RandomForestClassifier(random_state=3,n_estimators=150)
 X = df_clean[df_clean.activity=='Others'].drop(['target_status','activity'],axis=1)
 y = df_clean.loc[df_clean.activity=='Others','target_status']
 fitted_model_other = model.fit(X, y)
 
 #Retail trade
+model = RandomForestClassifier(random_state=3,n_estimators=150)
 X = df_clean[df_clean.activity=='Retail_trade'].drop(['target_status','activity'],axis=1)
 y = df_clean.loc[df_clean.activity=='Retail_trade','target_status']
 fitted_model_ret = model.fit(X, y)
 
 #Wholesale_trade
+model = RandomForestClassifier(random_state=3,n_estimators=150)
 X = df_clean[df_clean.activity=='Wholesale_trade'].drop(['target_status','activity'],axis=1)
 y = df_clean.loc[df_clean.activity=='Wholesale_trade','target_status']
 fitted_model_whole = model.fit(X, y)
 
 
 #Construction
+model = RandomForestClassifier(random_state=3,n_estimators=150)
 X = df_clean[df_clean.activity=='Construction'].drop(['target_status','activity'],axis=1)
 y = df_clean.loc[df_clean.activity=='Construction','target_status']
 fitted_model_con = model.fit(X, y)
 
 #Financial_services
+model = RandomForestClassifier(random_state=3,n_estimators=150)
 X = df_clean[df_clean.activity=='Financial_services'].drop(['target_status','activity'],axis=1)
 y = df_clean.loc[df_clean.activity=='Financial_services','target_status']
 fitted_model_fin = model.fit(X, y)
 
 #Transport
+model = RandomForestClassifier(random_state=3,n_estimators=150)
 X = df_clean[df_clean.activity=='Transport'].drop(['target_status','activity'],axis=1)
 y = df_clean.loc[df_clean.activity=='Transport','target_status']
 fitted_model_tran = model.fit(X, y)

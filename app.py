@@ -49,7 +49,7 @@ def calc_monthly_payment(principal, interest, months):
     calculate and return monthly payment amount
     '''
     # monthly rate from annual percentage rate
-    interest_rate = interest/(100 * 12)
+    interest_rate = interest/(100 * 4)
     # total number of payments
     payment_num = months
     # calculate monthly payment
@@ -453,6 +453,7 @@ def company():
                               'activity' : [activity]
                               #-----------------------------------------------    
                               })
+            
             if X.activity[0] == 'Wholesale_trade': prob_default = Rating_RandomForestClassifier_model_whole.predict_proba(X.drop('activity',axis=1))[:,1]
             elif X.activity[0] == 'Retail_trade': prob_default = Rating_RandomForestClassifier_model_ret.predict_proba(X.drop('activity',axis=1))[:,1]
             elif X.activity[0] == 'Construction': prob_default = Rating_RandomForestClassifier_model_con.predict_proba(X.drop('activity',axis=1))[:,1]
@@ -564,7 +565,7 @@ def company():
                                message=message, \
                                name=current_user.username)
     else: # request acepted
-        monthly_payment = calc_monthly_payment(loan.loan_amount, 7.5*prob_default, \
+        monthly_payment = calc_monthly_payment(loan.loan_amount, 15*prob_default, \
                                                loan.number_of_installments)
         message = 'Congratulations, your loan has been accepted and with a monthly payment of: %.2f'% \
         (monthly_payment) + " €"

@@ -128,7 +128,9 @@ class Company(UserMixin, db.Model):
     #---------------------------------------   
     prob_default = db.Column(db.Float)
     username = db.Column(db.String(15))    
+    activity = db.Column(db.String(20))
     data_timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+    
 
 ##############################################################################
 #     SQLAlchemy ORM classes - END                                           #
@@ -171,7 +173,7 @@ class CompanyForm(FlaskForm):
     p10000 = MyFloatField('Total Assets / Total activos', validators=[InputRequired()])
     p20000 = MyFloatField('Own Capital / Patrimonio neto', validators=[InputRequired()])
     p31200_plus_32300 = MyFloatField('Total Debt / Deuda total', validators=[InputRequired()])
-
+    activity = SelectField('Type of Industry / Tipo de Actividad', choices=[('Wholesale_trade', 'Wholesale trade'), ('Retail_trade', 'Retail trade'), ('Construction', 'Construction'), ('Manufacturing', 'Manufacturing'),('Financial_services', 'Financial services'), ('Manufacturing', 'Manufacturing'), ('Others', 'Others')]) 
 
 ##############################################################################
 #     FlaskForm classes - END                                                #
@@ -272,6 +274,7 @@ def loan():
                                 loan_amount = form.loan_amount.data, \
                                 number_of_installments = form.number_of_installments.data, \
                                 name = company.name, \
+                                activity = company.activity, \
                                 p40100_plus_40500 = company.p40100_plus_40500, \
                                 p31200_plus_32300 = company.p31200_plus_32300, \
                                 p49100_plus_40800 = company.p49100_plus_40800, \
@@ -312,7 +315,14 @@ def loan():
 import numpy as np
 import pandas as pd
 from joblib import load
-Rating_RandomForestClassifier_model = load('./database/Rating_RandomForestClassifier.joblib') 
+Rating_RandomForestClassifier_model_manu = load('./database/Rating_RandomForestClassifier_manu.joblib') 
+Rating_RandomForestClassifier_model_con = load('./database/Rating_RandomForestClassifier_con.joblib') 
+Rating_RandomForestClassifier_model_fin = load('./database/Rating_RandomForestClassifier_fin.joblib') 
+Rating_RandomForestClassifier_model_other = load('./database/Rating_RandomForestClassifier_other.joblib') 
+Rating_RandomForestClassifier_model_ret = load('./database/Rating_RandomForestClassifier_ret.joblib') 
+Rating_RandomForestClassifier_model_whole = load('./database/Rating_RandomForestClassifier_whole.joblib') 
+Rating_RandomForestClassifier_model_tran = load('./database/Rating_RandomForestClassifier_tran.joblib') 
+
 @app.route('/company', methods=['GET', 'POST'])
 @login_required
 def company(): 
@@ -414,7 +424,12 @@ def company():
             try:
                 cap_assets = form.p20000.data / form.p10000.data
             except:
-                cap_assets = 0            
+                cap_assets = 0      
+            
+            try:
+                activity = form.activity.data 
+            except:
+                cap_assets = 'others'
                 
             X = pd.DataFrame({'p10000': [p10000], \
                               'p20000' : [p20000], \
@@ -434,11 +449,18 @@ def company():
                               'op_margin' : [op_margin], \
                               'current_ratio' : [current_ratio], \
                               'debt_assets' : [debt_assets],\
-                              'cap_assets' : [cap_assets]
+                              'cap_assets' : [cap_assets],\
+                              'activity' : [activity]
                               #-----------------------------------------------    
                               })
-            prob_default = Rating_RandomForestClassifier_model.predict_proba(X)[:,1]
-        
+            if X.activity[0] == 'Wholesale_trade': prob_default = Rating_RandomForestClassifier_model_whole.predict_proba(X.drop('activity',axis=1))[:,1]
+            elif X.activity[0] == 'Retail_trade': prob_default = Rating_RandomForestClassifier_model_ret.predict_proba(X.drop('activity',axis=1))[:,1]
+            elif X.activity[0] == 'Construction': prob_default = Rating_RandomForestClassifier_model_con.predict_proba(X.drop('activity',axis=1))[:,1]
+            elif X.activity[0] == 'Manufacturing': prob_default = Rating_RandomForestClassifier_model_manu.predict_proba(X.drop('activity',axis=1))[:,1]
+            elif X.activity[0] == 'Financial_services': prob_default = Rating_RandomForestClassifier_model_fin.predict_proba(X.drop('activity',axis=1))[:,1]
+            elif X.activity[0] == 'Transport': prob_default = Rating_RandomForestClassifier_model_tran.predict_proba(X.drop('activity',axis=1))[:,1]
+            else: prob_default = Rating_RandomForestClassifier_model_other.predict_proba(X.drop('activity',axis=1))[:,1]
+            
             try: # UPDATING DATA OF AN EXISTING COMPANY
                 company = Company.query.filter(Company.username.in_([current_user.username]),Company.nif.in_([form.nif.data])).first()
                 company.nif = form.nif.data
@@ -458,6 +480,7 @@ def company():
                 company.rraa_rrpp = rraa_rrpp
                 company.prob_default = prob_default
                 company.log_operating_income = log_operating_income 
+                company.activity = activity
                 #-----------------------------------------------------
                 company.debt_equity = debt_equity
                 company.assets_turnover = assets_turnover 
@@ -479,11 +502,13 @@ def company():
                         p40100_plus_40500 = form.p40100_plus_40500.data, \
                         p49100_plus_40800 = form.p49100_plus_40800.data, \
                         p31200_plus_32300 = form.p31200_plus_32300.data, \
+                        activity = form.activity.data, \
                         ebitda_income = ebitda_income, \
                         debt_ebitda = debt_ebitda, \
                         rraa_rrpp = rraa_rrpp, \
                         prob_default = prob_default, \
                         log_operating_income = log_operating_income, \
+                        
                             #---------------------------------
                         debt_equity = debt_equity, \
                         assets_turnover = assets_turnover, \

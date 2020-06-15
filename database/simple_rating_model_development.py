@@ -79,36 +79,101 @@ df['debt_assets'] = (df.p10000_h0 - df.p20000_h0) /df.p10000_h0
 # Own Capital / Total Assets
 df['cap_assets'] = df.p20000_h0 / df.p10000_h0
 
+df['industry'] = 0
+df.loc[df.cnae!='','industry'] = df[df.cnae!=''].apply(lambda x: int(x['cnae'][0:2]),axis = 1)
+
+def define_act(x):
+    if x.industry == 46: return 'Wholesale_trade'
+    elif x.industry in [45,47,48]: return 'Retail_trade'
+    elif x.industry in [41,42,43,44]: return 'Construction'
+    elif x.industry in range(10,35): return 'Manufacturing'
+    elif x.industry in range(64,68): return 'Financial_services'
+    elif x.industry in range(49,55): return 'Transport'
+    else: return 'Others'
+    
+df['activity'] = df.apply(define_act,axis=1)
+
 df_mod = df[['p10000_h0', 'p20000_h0', 'p31200_h0','p32300_h0', 'p40100_mas_40500_h0',
-       'p40800_h0', 'p49100_h0', 'h0_anio','target_status',
+       'p40800_h0', 'p49100_h0','target_status',
        'ebitda_income', 'debt_ebitda', 'rraa_rrpp', 'log_operating_income',
        'debt_equity', 'assets_turnover', 'ROA', 'op_margin', 'current_ratio',
-       'debt_assets', 'cap_assets']]
+       'debt_assets', 'cap_assets','activity']]
 
 from sklearn.ensemble import RandomForestClassifier
-model = RandomForestClassifier(random_state=3,n_estimators=100)
-
-#df_clean = df[['ebitda_income','debt_ebitda','rraa_rrpp','log_operating_income','target_status']].replace([np.inf, -np.inf], np.nan).dropna()
+model = RandomForestClassifier(random_state=3,n_estimators=150)
 df_clean = df_mod.replace([np.inf, -np.inf], np.nan).dropna()
-X = df_clean.drop('target_status',axis=1)
-y = df_clean['target_status']
+#df_clean = df[['ebitda_income','debt_ebitda','rraa_rrpp','log_operating_income','target_status']].replace([np.inf, -np.inf], np.nan).dropna()
+#Manufacturing
+X = df_clean[df_clean.activity=='Manufacturing'].drop(['target_status','activity'],axis=1)
+y = df_clean.loc[df_clean.activity=='Manufacturing','target_status']
+fitted_model_manu = model.fit(X, y)
 
-fitted_model = model.fit(X, y)
-y_pred = fitted_model.predict(X)
-y_pred_proba = fitted_model.predict_proba(X)[:,1]
+#Others
+X = df_clean[df_clean.activity=='Others'].drop(['target_status','activity'],axis=1)
+y = df_clean.loc[df_clean.activity=='Others','target_status']
+fitted_model_other = model.fit(X, y)
 
-print ("ASSESSING THE MODEL...")
-# CALCULATING GINI PERFORMANCE ON DEVELOPMENT SAMPLE
-from sklearn.metrics import roc_auc_score
-gini_score = 2*roc_auc_score(y, y_pred_proba)-1
-print ("GINI DEVELOPMENT=", gini_score)
+#Retail trade
+X = df_clean[df_clean.activity=='Retail_trade'].drop(['target_status','activity'],axis=1)
+y = df_clean.loc[df_clean.activity=='Retail_trade','target_status']
+fitted_model_ret = model.fit(X, y)
 
-from sklearn.metrics import accuracy_score
-print("Accuracy: {0}".format(accuracy_score(y_pred,y)))
+#Wholesale_trade
+X = df_clean[df_clean.activity=='Wholesale_trade'].drop(['target_status','activity'],axis=1)
+y = df_clean.loc[df_clean.activity=='Wholesale_trade','target_status']
+fitted_model_whole = model.fit(X, y)
+
+
+#Construction
+X = df_clean[df_clean.activity=='Construction'].drop(['target_status','activity'],axis=1)
+y = df_clean.loc[df_clean.activity=='Construction','target_status']
+fitted_model_con = model.fit(X, y)
+
+#Financial_services
+X = df_clean[df_clean.activity=='Financial_services'].drop(['target_status','activity'],axis=1)
+y = df_clean.loc[df_clean.activity=='Financial_services','target_status']
+fitted_model_fin = model.fit(X, y)
+
+#Transport
+X = df_clean[df_clean.activity=='Transport'].drop(['target_status','activity'],axis=1)
+y = df_clean.loc[df_clean.activity=='Transport','target_status']
+fitted_model_tran = model.fit(X, y)
+
+### Prediction on the data df_clean
+#if X.activity == 'Wholesale_trade': return 
+#elif X.activity == 'Retail_trade': return 
+#elif X.activity == 'Construction': return 
+#elif X.activity == 'Manufacturing': return 
+#elif X.activity == 'Financial_services': return 
+#elif X.activity == 'Transport': return 
+#else: return 'Others'
+#
+#
+#
+#
+#
+#fitted_model = model.fit(X, y)
+#y_pred = fitted_model.predict(X)
+#y_pred_proba = fitted_model.predict_proba(X)[:,1]
+#
+#print ("ASSESSING THE MODEL...")
+## CALCULATING GINI PERFORMANCE ON DEVELOPMENT SAMPLE
+#from sklearn.metrics import roc_auc_score
+#gini_score = 2*roc_auc_score(y, y_pred_proba)-1
+#print ("GINI DEVELOPMENT=", gini_score)
+#
+#from sklearn.metrics import accuracy_score
+#print("Accuracy: {0}".format(accuracy_score(y_pred,y)))
 
 print ("SAVING THE PERSISTENT MODEL...")
 from joblib import dump#, load
-dump(fitted_model, 'Rating_RandomForestClassifier.joblib') 
+dump(fitted_model_manu, 'Rating_RandomForestClassifier_manu.joblib') 
+dump(fitted_model_con, 'Rating_RandomForestClassifier_con.joblib') 
+dump(fitted_model_fin, 'Rating_RandomForestClassifier_fin.joblib') 
+dump(fitted_model_other, 'Rating_RandomForestClassifier_other.joblib') 
+dump(fitted_model_ret, 'Rating_RandomForestClassifier_ret.joblib')
+dump(fitted_model_whole, 'Rating_RandomForestClassifier_whole.joblib') 
+dump(fitted_model_tran, 'Rating_RandomForestClassifier_tran.joblib') 
 
 
 with open("train_features.txt", 'w') as f:
